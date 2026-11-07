@@ -3,259 +3,63 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Pageant Tabulation</title>
+<title>Judge Scoresheet</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%234f2b48'/%3E%3Cpath d='M9 10h14v3a7 7 0 0 1-14 0zM16 20v4M12 25h8' stroke='white' stroke-width='2.2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap">
-<style>
-  :root{
-    --plum:#4f2b48; --navy:#023c6e;
-    --plum-ink:#4f2b48; --navy-ink:#023c6e;
-    --bg:#f6f4f7; --card:#ffffff; --ink:#1f1a24; --muted:#6a6271; --line:#e4dfe8; --head:#faf8fb;
-    --gold:#a87a12; --gold-soft:#fbf3dc; --silver:#7d838c; --bronze:#9a5f2a;
-    --bad:#b03a2e; --bad-soft:#fdecea;
-    --font-ui:"Archivo",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-    --font-display:"Fraunces",Georgia,"Times New Roman",serif;
-    color-scheme:light;
-  }
-  @media (prefers-color-scheme: dark){ :root{
-    --plum-ink:#d6a9cc; --navy-ink:#8fbfeb;
-    --bg:#141118; --card:#1d1922; --ink:#ece6ef; --muted:#a59cab; --line:#342d3b; --head:#231e29;
-    --gold:#d3a63a; --gold-soft:#33291a; --silver:#9aa1aa; --bronze:#c07f45;
-    --bad:#f08b7f; --bad-soft:#3a1f1d; color-scheme:dark }}
-
-  *{box-sizing:border-box}
-  html,body{margin:0}
-  body{background:var(--bg);color:var(--ink);font:15px/1.45 var(--font-ui)}
-  [hidden]{display:none!important}
-  .wrap{max-width:1240px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
-  header{background:linear-gradient(110deg,var(--plum) 0%,var(--navy) 100%);color:#fff}
-  header .wrap{padding-block:22px 0}
-  .brand{display:flex;align-items:flex-end;gap:12px 20px;flex-wrap:wrap;justify-content:space-between}
-  h1{margin:0;font:700 clamp(22px,4vw,30px)/1.1 var(--font-display);text-wrap:balance}
-  .sub{opacity:.82;font-size:14px;margin-top:4px}
-  .chips{display:flex;gap:8px;flex-wrap:wrap}
-  .chip{font-size:12px;font-weight:600;padding:5px 10px;border-radius:999px;background:rgba(255,255,255,.14);white-space:nowrap}
-  .sync::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:#bbb;margin-right:6px;vertical-align:1px}
-  .sync.live::before{background:#6fe39b} .sync.warn::before{background:#f2c14e}
-  nav{display:flex;gap:2px;margin-top:18px;overflow-x:auto}
-  nav button{background:transparent;border:0;color:#fff;opacity:.78;padding:11px 16px;font:700 12px var(--font-ui);cursor:pointer;border-radius:8px 8px 0 0;letter-spacing:.6px;text-transform:uppercase;white-space:nowrap}
-  nav button:hover{opacity:1}
-  nav button.on{background:var(--bg);color:var(--plum-ink);opacity:1}
-  button:focus-visible{outline:2px solid var(--navy-ink);outline-offset:2px}
-  main .wrap{padding-block:22px 64px}
-
-  .bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
-  .lbl{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;min-width:70px}
-  .pills{display:flex;gap:6px;flex-wrap:wrap}
-  .pill{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:7px 14px;border-radius:999px;cursor:pointer;font:600 14px var(--font-ui)}
-  .pill.on{background:var(--navy);border-color:var(--navy);color:#fff}
-  .pill.plum.on{background:var(--plum);border-color:var(--plum)}
-  .progress{font-size:13px;color:var(--muted);margin-left:auto}
-
-  .grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
-  @media (max-width:960px){.grid2{grid-template-columns:minmax(0,1fr)}}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;min-width:0}
-  .card h2{margin:0;padding:12px 16px;font:800 13px var(--font-ui);letter-spacing:.7px;text-transform:uppercase;color:#fff;display:flex;justify-content:space-between;gap:10px}
-  .card h2 em{font-style:normal;font-weight:600;opacity:.85;text-transform:none;letter-spacing:0}
-  .card.F h2{background:var(--plum)} .card.M h2{background:var(--navy)}
-  .card.plain h2{background:var(--card);color:var(--ink);border-bottom:1px solid var(--line)}
-  .scroll{overflow-x:auto}
-  table{border-collapse:collapse;width:100%}
-  th,td{padding:8px 10px;text-align:center;border-bottom:1px solid var(--line);white-space:nowrap}
-  th{font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);font-weight:700;background:var(--head);white-space:normal;vertical-align:bottom;min-width:70px}
-  th:first-child{min-width:0}
-  th small{display:block;font-weight:800;color:var(--plum-ink);font-size:11px}
-  .M th small{color:var(--navy-ink)}
-  td.name{text-align:left;font-weight:700}
-  td.name span{display:block;font-weight:400;color:var(--muted);font-size:12px;max-width:180px;overflow:hidden;text-overflow:ellipsis}
-  tr:last-child td{border-bottom:0}
-  .num,.tot{font-variant-numeric:tabular-nums}
-  .tot{font-weight:800}
-  .F .tot{color:var(--plum-ink)} .M .tot{color:var(--navy-ink)}
-  input.sc{width:62px;padding:7px 4px;border:1px solid var(--line);border-radius:7px;text-align:center;font:600 15px var(--font-ui);font-variant-numeric:tabular-nums;background:var(--card);color:var(--ink)}
-  input.sc:focus{outline:2px solid var(--navy-ink);border-color:transparent}
-  .F input.sc:focus{outline-color:var(--plum-ink)}
-  input.sc.bad{border-color:var(--bad);background:var(--bad-soft)}
-  .rank{display:inline-block;min-width:30px;padding:2px 8px;border-radius:999px;font-weight:800;background:var(--head);color:var(--ink);border:1px solid var(--line);font-variant-numeric:tabular-nums}
-  .r1{background:var(--gold);border-color:var(--gold);color:#fff} .r2{background:var(--silver);border-color:var(--silver);color:#fff} .r3{background:var(--bronze);border-color:var(--bronze);color:#fff}
-  tr.top td{background:var(--gold-soft)}
-  .muted{color:var(--muted)}
-  .note{font-size:13px;color:var(--muted);margin:12px 2px 0;max-width:80ch}
-  .formula{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;background:var(--head);border:1px solid var(--line);padding:1px 6px;border-radius:5px;color:var(--ink)}
-  .empty{padding:34px 20px;text-align:center;color:var(--muted)}
-  .empty b{display:block;color:var(--ink);font-size:16px;margin-bottom:4px}
-
-  h3.sec{font:700 22px var(--font-display);color:var(--plum-ink);margin:30px 0 12px}
-  .awards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
-  .award{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;border-top:4px solid var(--navy)}
-  .award.F{border-top-color:var(--plum)}
-  .award .t{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);font-weight:800}
-  .award .w{font:700 19px/1.25 var(--font-display);margin-top:6px}
-  .award.F .w{color:var(--plum-ink)} .award.M .w{color:var(--navy-ink)}
-  .award .s{color:var(--muted);font-size:12px;margin-top:2px}
-
-  .form{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;padding:16px}
-  .form label{display:flex;flex-direction:column;gap:5px;font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
-  .form input{padding:9px 10px;border:1px solid var(--line);border-radius:8px;font:400 15px var(--font-ui);color:var(--ink);background:var(--card);text-transform:none;letter-spacing:0}
-  .actions{display:flex;gap:10px;flex-wrap:wrap;padding:0 16px 16px;align-items:center}
-  .btn{border:0;border-radius:8px;padding:9px 16px;font:700 14px var(--font-ui);cursor:pointer;color:#fff;background:var(--navy)}
-  .btn.plum{background:var(--plum)}
-  .btn.ghost{background:var(--card);color:var(--ink);border:1px solid var(--line)}
-  .btn.danger{background:var(--card);color:var(--bad);border:1px solid var(--bad)}
-  .btn.solid-danger{background:var(--bad);color:var(--card)}
-  .btn:disabled{opacity:.5;cursor:not-allowed}
-  .confirm{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 14px;border:1px solid var(--bad);background:var(--bad-soft);border-radius:10px;margin:0 16px 16px;font-size:14px}
-  .banner{border:1px solid var(--line);background:var(--card);border-left:4px solid var(--gold);border-radius:10px;padding:10px 14px;font-size:14px;margin-bottom:16px}
-  .share{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:0 16px 16px}
-  .share code{font:600 14px ui-monospace,Menlo,monospace;background:var(--head);border:1px solid var(--line);border-radius:8px;padding:8px 10px;word-break:break-all;flex:1 1 260px}
-
-  /* Join screen */
-  .join{max-width:880px;margin:30px auto 0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
-  @media (max-width:760px){.join{grid-template-columns:minmax(0,1fr)}}
-  .join .card{padding-bottom:4px}
-  .join p{margin:0;padding:14px 16px 0;color:var(--muted);font-size:14px}
-  .err{color:var(--bad);font-size:13px;padding:0 16px 12px}
-
-  .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:999px;font-weight:600;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:20}
-  .toast.show{opacity:1}
-  @media (prefers-reduced-motion:reduce){.toast{transition:none}}
-  @media print{
-    header nav,.bar,.noprint,.actions,.banner,.chips{display:none!important}
-    header{background:none;color:#000;border-bottom:3px solid #4f2b48}
-    body{background:#fff;color:#000}
-    .card{break-inside:avoid}
-    .card h2,.r1,.r2,.r3,tr.top td{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  }
-</style>
+<link rel="stylesheet" href="style.css?v=2">
 </head>
 <body>
-<header>
+<header class="solo">
   <div class="wrap">
     <div class="brand">
       <div>
-        <h1 id="evTitle">Pageant Tabulation</h1>
-        <div class="sub" id="evSub">Official scoring &amp; results</div>
+        <div class="eyebrow">Judge Scoresheet</div>
+        <h1 id="evTitle">Power Dressing Icon 2026</h1>
+        <div class="sub" id="evSub"></div>
       </div>
-      <div class="chips"><span class="chip" id="codeChip" hidden></span><span class="chip sync" id="sync">Loading…</span></div>
+      <div class="chips"><span class="chip" id="judgeChip" hidden></span><span class="chip sync" id="sync">Connecting…</span></div>
     </div>
-    <nav id="nav" aria-label="Sections" hidden>
-      <button data-v="score" class="on">Judge Scoring</button>
-      <button data-v="results">Category Results</button>
-      <button data-v="overall">Overall &amp; Awards</button>
-      <button data-v="setup">Setup</button>
-    </nav>
   </div>
 </header>
 
 <main><div class="wrap">
   <div class="banner" id="banner" hidden></div>
 
-  <!-- JOIN -->
-  <section id="v-join" hidden>
-    <div class="join">
-      <div class="card F">
-        <h2>Join an event</h2>
-        <p>Judges: enter the event code the organizer gave you.</p>
-        <form class="form" id="joinForm">
-          <label>Event code<input id="joinCode" autocomplete="off" autocapitalize="characters" placeholder="e.g. K7Q2M9XD" required></label>
-        </form>
-        <div class="err" id="joinErr" hidden></div>
-        <div class="actions"><button class="btn plum" form="joinForm">Join event</button></div>
-      </div>
-      <div class="card M">
-        <h2>Create a new event</h2>
-        <p>Organizer: set a title and a PIN. The PIN unlocks the Setup tab.</p>
-        <form class="form" id="newForm">
-          <label>Event title<input id="newTitle" maxlength="80" placeholder="e.g. Mr. & Ms. CDAP 2026" required></label>
-          <label>Organizer PIN<input id="newPin" type="password" inputmode="numeric" minlength="4" maxlength="12" placeholder="4–12 digits" required></label>
-        </form>
-        <div class="err" id="newErr" hidden></div>
-        <div class="actions"><button class="btn" form="newForm">Create event</button></div>
-      </div>
+  <!-- Enter event code -->
+  <section id="v-code" hidden>
+    <div class="center card F">
+      <h2>Join as a judge</h2>
+      <p class="lead">Enter the event code from the organizer, or open the judge link they sent you.</p>
+      <form class="form" id="codeForm"><label>Event code<input id="codeInput" autocomplete="off" autocapitalize="characters" placeholder="e.g. K7Q2M9XD" required></label></form>
+      <div class="err" id="codeErr" hidden></div>
+      <div class="actions"><button class="btn plum" form="codeForm">Continue</button></div>
     </div>
   </section>
 
-  <!-- SCORING -->
+  <!-- Pick judge -->
+  <section id="v-who" hidden>
+    <div class="center card plain">
+      <h2>Which judge are you?</h2>
+      <div class="who" id="whoList"></div>
+    </div>
+  </section>
+
+  <!-- Score -->
   <section id="v-score" hidden>
-    <div class="bar"><span class="lbl">Judge</span><div class="pills" id="judgePills"></div></div>
     <div class="bar"><span class="lbl">Category</span><div class="pills" id="catPills"></div><span class="progress" id="scoreProgress"></span></div>
     <div class="grid2" id="scoreTables"></div>
-    <p class="note">Each criterion's maximum equals its weight (30% = 30 points), so every category totals 100. Scores save automatically and appear on every judge's screen.</p>
-  </section>
-
-  <!-- RESULTS -->
-  <section id="v-results" hidden>
-    <div class="bar"><span class="lbl">Category</span><div class="pills" id="resCatPills"></div>
-      <button class="btn ghost noprint" style="margin-left:auto" onclick="window.print()">Print</button></div>
-    <div class="grid2" id="resTables"></div>
-    <p class="note"><span class="formula">TOTAL = SUM(criteria)</span> per judge · <span class="formula">AVERAGE = AVERAGE(judge totals)</span> · <span class="formula">RANK = RANK.EQ(average, all averages, 0)</span>, so the highest average ranks 1 and ties share a rank. A candidate is ranked once every judge has finished scoring them.</p>
-  </section>
-
-  <!-- OVERALL -->
-  <section id="v-overall" hidden>
-    <div class="bar"><span class="lbl">Standings</span>
-      <button class="btn ghost noprint" style="margin-left:auto" onclick="window.print()">Print</button></div>
-    <div class="grid2" id="ovTables"></div>
-    <p class="note"><span class="formula">OVERALL = rank of AVERAGE(category ranks)</span>, lowest first. If two candidates tie, the one with the higher average score across categories places higher.</p>
-    <h3 class="sec">Special Awards</h3>
-    <div class="awards" id="awards"></div>
-  </section>
-
-  <!-- SETUP -->
-  <section id="v-setup" hidden>
-    <div class="card plain" id="shareCard">
-      <h2>Share with judges</h2>
-      <div class="share" style="padding-top:16px"><code id="shareLink"></code><button class="btn plum" id="copyLink">Copy link</button></div>
-    </div>
-
-    <div class="card plain" id="unlockCard" style="margin-top:16px" hidden>
-      <h2>Organizer access</h2>
-      <form class="form" id="unlockForm"><label>Organizer PIN<input id="unlockPin" type="password" inputmode="numeric" required></label></form>
-      <div class="err" id="unlockErr" hidden></div>
-      <div class="actions"><button class="btn" form="unlockForm">Unlock setup</button></div>
-    </div>
-
-    <div id="setupBody">
-      <div class="card plain" style="margin-top:16px">
-        <h2>Event</h2>
-        <div class="form">
-          <label>Event title<input id="setTitle" maxlength="80"></label>
-          <label>Subtitle<input id="setSub" maxlength="120"></label>
-          <label>Female candidates<input id="setNF" type="number" min="1" max="30" inputmode="numeric"></label>
-          <label>Male candidates<input id="setNM" type="number" min="1" max="30" inputmode="numeric"></label>
-        </div>
-      </div>
-      <div class="card plain" style="margin-top:16px">
-        <h2>Judges</h2>
-        <div class="form" id="setJudges"></div>
-        <div class="actions"><button class="btn ghost" id="addJudge">Add judge</button><button class="btn danger" id="rmJudge">Remove last judge</button></div>
-        <div id="rmConfirm"></div>
-      </div>
-      <div class="grid2" style="margin-top:16px">
-        <div class="card F"><h2>Female candidate names</h2><div class="form" id="setNamesF"></div></div>
-        <div class="card M"><h2>Male candidate names</h2><div class="form" id="setNamesM"></div></div>
-      </div>
-      <div class="card plain" style="margin-top:16px">
-        <h2>Data</h2>
-        <div class="actions" style="padding-top:16px">
-          <button class="btn" id="expCsv">Export results (CSV)</button>
-          <button class="btn ghost" id="expJson">Download score backup (JSON)</button>
-          <button class="btn danger" id="clearAll">Clear all scores</button>
-        </div>
-        <div id="clearConfirm"></div>
-      </div>
-    </div>
-
-    <div class="actions" style="padding:16px 0 0" id="leaveRow"><button class="btn ghost" id="leaveEvent">Leave this event on this device</button></div>
+    <p class="note">Score each criterion up to its percentage: Presentation up to 40, Appropriateness of the Outfit up to 30, Attention to Details up to 30. Scores save automatically as you type.</p>
+    <p class="note"><a href="#" id="switchJudge">Not <span id="meName"></span>? Choose a different judge</a></p>
   </section>
 </div></main>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="firebase-config.js"></script>
+<script src="firebase-config.js?v=2"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="app.js"></script>
+<script src="core.js?v=2"></script>
+<script src="judge.js?v=2"></script>
 </body>
 </html>

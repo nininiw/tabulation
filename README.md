@@ -1,63 +1,66 @@
-# Pageant Tabulation
+# Power Dressing Icon 2026 · Tabulation
 
-A browser-based tabulation system. Judges score from their own phones or laptops, and totals, averages, ranks, overall standings and special awards update live for everyone.
+A browser-based tabulation system with two pages:
 
-Criteria, weights and formulas follow `TABULATION.xlsx`:
+- **Admin** (`admin.html`): create the event, set judges and contestants, watch every judge's scores live, see the computation, and get the winners.
+- **Judge** (`index.html`): each judge gets their own link and sees only their own scoresheet. No results or rankings are shown to judges.
+
+Live site: https://nininiw.github.io/tabulation/ (judges) and https://nininiw.github.io/tabulation/admin.html (admin)
+
+## Criteria for Judging
+
+Used for both rounds, **School Uniform** and **Corporate Attire**, in the Male and Female categories:
+
+| Criterion | Weight (max points) |
+|---|---|
+| Presentation (Poise, Bearing and Confidence) | 40% |
+| Appropriateness of the Outfit | 30% |
+| Attention to Details (make-up, shoes, accessories) | 30% |
+| **Total** | **100%** |
+
+## Computation (from `TABULATION.xlsx`)
 
 | Result | Formula |
 |---|---|
-| Judge total | `SUM(criteria)` (each criterion's maximum is its weight, so totals are out of 100) |
-| Category average | `AVERAGE(all judges' totals)` |
-| Category rank | `RANK.EQ(average, all averages, 0)`: highest average ranks 1, ties share a rank |
-| Overall | rank of `AVERAGE(the 3 category ranks)`, lowest first; ties go to the higher average score |
-| Special awards | the rank-1 candidate in each category |
+| Judge total | `SUM(criteria)`, out of 100 |
+| Round average | `AVERAGE(all judges' totals)` |
+| Round rank | `RANK.EQ(average, all averages, 0)`: highest average ranks 1, ties share a rank |
+| Overall | rank of `AVERAGE(School Uniform rank, Corporate Attire rank)`, lowest first; a tie goes to the higher average score across both rounds |
+
+**Winners (Male & Female):** Power Dressing Icon 2026 (overall 1st), 1st Runner-up (2nd), 2nd Runner-up (3rd).
+**Special citations (Male & Female):** Best in School Uniform and Best in Corporate Attire (rank 1 in that round).
 
 ## Files
 
-- `index.html`: the page
-- `app.js`: scoring logic and live sync
-- `firebase-config.js`: your Firebase settings (paste them in, step 1)
-- `firestore.rules`: database security rules (step 1)
+- `index.html` + `judge.js`: judge page
+- `admin.html` + `admin.js`: admin page
+- `core.js`: criteria, formulas and live sync shared by both pages
+- `style.css`: look and colors (#4f2b48 plum, #023c6e navy)
+- `firebase-config.js`: Firebase settings
+- `firestore.rules`: database security rules (paste into Firebase > Firestore > Rules)
 
-Without Firebase settings the site still works, but only on one device: scores are saved in that browser.
+## Run the event
 
-## 1. Set up the free online database (Firebase, about 10 minutes)
+1. **Admin:** open `admin.html`, choose **Create a new event**, enter the title and an admin PIN.
+2. In **Event Setup**, type the judges' names and the number and names of the contestants.
+3. Click **Copy link** beside each judge and send that judge their own link.
+4. **Judges:** open their link, choose **School Uniform** or **Corporate Attire**, and type scores. Scores save automatically.
+5. **Admin:** watch **Judges' Scores** (progress and each judge's sheet), **Computation**, and **Winners** update live. Use **Print** or **Export results (CSV)** at the end.
 
-1. Go to https://console.firebase.google.com and sign in with a Google account. Click **Create a project** and name it, e.g. `pageant-tabulation`. You can turn Google Analytics off.
-2. **Build > Authentication > Get started > Sign-in method**: enable **Anonymous**.
-3. **Build > Firestore Database > Create database**: choose a location near you (e.g. `asia-southeast1`), start in **production mode**.
-4. In Firestore, open the **Rules** tab, replace everything with the contents of `firestore.rules`, and click **Publish**.
-5. **Project settings** (gear icon) > **Your apps** > click the web icon `</>` and register an app (no hosting needed). Copy the `firebaseConfig` values into `firebase-config.js`.
-6. **Authentication > Settings > Authorized domains**: add `YOUR-GITHUB-USERNAME.github.io`.
+To open the admin page on another device, choose **Open an existing event** and enter the event code and PIN.
 
-## 2. Publish on GitHub Pages
+## Publishing changes
 
-1. Create a free account at https://github.com, then create a **new public repository** named `tabulation` (leave it empty).
-2. In Terminal, from this `site` folder:
-
-```bash
-git remote add origin https://github.com/YOUR-GITHUB-USERNAME/tabulation.git
-git push -u origin main
-```
-
-3. In the repository on GitHub: **Settings > Pages > Build and deployment**: Source **Deploy from a branch**, Branch **main**, folder **/ (root)**, **Save**.
-4. After a minute the site is live at `https://YOUR-GITHUB-USERNAME.github.io/tabulation/`.
-
-After editing a file later, publish the change with:
+After editing a file, from this folder:
 
 ```bash
 git add -A && git commit -m "Update" && git push
 ```
 
-## 3. Run the event
-
-1. **Organizer:** open the site, choose **Create a new event**, enter the title and a PIN. Then in **Setup**, set the judge names, number of candidates and (optionally) candidate names.
-2. Copy the share link from **Setup** and send it to the judges. It contains the 8-character event code.
-3. **Judges:** open the link, tap their own name under **Judge**, choose a category and type scores. Scores save automatically.
-4. Everyone can watch **Category Results** and **Overall & Awards** update live. Use **Print** or **Export results (CSV)** at the end.
+When you change `core.js`, `judge.js`, `admin.js` or `style.css`, raise the `?v=` number on their links in `index.html` and `admin.html` so phones load the new version.
 
 ## Security notes
 
-- The event code is the key to an event: anyone with the link can view and enter scores, so only share it with your judges and tabulators.
-- The organizer PIN locks the Setup tab in the page. It keeps judges from changing the setup by accident, but it is not a hard security barrier.
-- Firebase's free Spark plan is far more than enough for an event of this size.
+- Anyone with a judge link can enter scores for that event, so send each link only to that judge.
+- The judge page doesn't show other judges' scores or results, but the event data isn't locked per judge. Someone technical with the event code could still read it.
+- The admin PIN protects the admin page from casual access. It is not a hard security barrier.

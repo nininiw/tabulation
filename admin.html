@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Tabulation Admin</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23023c6e'/%3E%3Cpath d='M9 10h14v3a7 7 0 0 1-14 0zM16 20v4M12 25h8' stroke='white' stroke-width='2.2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap">
+<link rel="stylesheet" href="style.css?v=2">
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="brand">
+      <div>
+        <div class="eyebrow">Tabulation Admin</div>
+        <h1 id="evTitle">Power Dressing Icon 2026</h1>
+        <div class="sub" id="evSub"></div>
+      </div>
+      <div class="chips"><span class="chip" id="codeChip" hidden></span><span class="chip sync" id="sync">Connecting…</span></div>
+    </div>
+    <nav id="nav" aria-label="Sections" hidden>
+      <button data-v="sheets">Judges' Scores</button>
+      <button data-v="results">Computation</button>
+      <button data-v="winners">Winners</button>
+      <button data-v="setup">Event Setup</button>
+    </nav>
+  </div>
+</header>
+<main><div class="wrap">
+  <div class="banner" id="banner" hidden></div>
+
+  <!-- START: create or open -->
+  <section id="v-start" hidden>
+    <div class="grid2 center">
+      <div class="card M">
+        <h2>Create a new event</h2>
+        <p class="lead">Set the event title and an admin PIN. You'll need the PIN to open this admin page on another device.</p>
+        <form class="form" id="newForm">
+          <label>Event title<input id="newTitle" maxlength="80" value="Power Dressing Icon 2026" required></label>
+          <label>Admin PIN<input id="newPin" type="password" inputmode="numeric" placeholder="4–12 digits" required></label>
+        </form>
+        <div class="err" id="newErr" hidden></div>
+        <div class="actions"><button class="btn" form="newForm">Create event</button></div>
+      </div>
+      <div class="card plain">
+        <h2>Open an existing event</h2>
+        <p class="lead">Enter the event code and admin PIN.</p>
+        <form class="form" id="openForm">
+          <label>Event code<input id="openCode" autocomplete="off" autocapitalize="characters" placeholder="e.g. K7Q2M9XD" required></label>
+          <label>Admin PIN<input id="openPin" type="password" inputmode="numeric" required></label>
+        </form>
+        <div class="err" id="openErr" hidden></div>
+        <div class="actions"><button class="btn plum" form="openForm">Open event</button></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- JUDGES' SCORES -->
+  <section id="v-sheets" hidden>
+    <h3 class="sec">Judging progress</h3>
+    <div class="card plain"><div class="scroll" id="progressTable"></div></div>
+    <h3 class="sec">Scoresheets</h3>
+    <div class="bar"><span class="lbl">Judge</span><div class="pills" id="sheetJudge"></div></div>
+    <div class="bar"><span class="lbl">Category</span><div class="pills" id="sheetCat"></div></div>
+    <div class="grid2" id="sheetTables"></div>
+  </section>
+
+  <!-- COMPUTATION -->
+  <section id="v-results" hidden>
+    <div class="bar"><span class="lbl">Category</span><div class="pills" id="resCat"></div>
+      <button class="btn ghost noprint" style="margin-left:auto" onclick="window.print()">Print</button></div>
+    <div class="grid2" id="resTables"></div>
+    <p class="note"><span class="formula">TOTAL = SUM(criteria)</span> per judge · <span class="formula">AVERAGE = AVERAGE(judge totals)</span> · <span class="formula">RANK = RANK.EQ(average, all averages, 0)</span>. A contestant is ranked once every judge has finished scoring them.</p>
+    <h3 class="sec">Overall standing</h3>
+    <div class="grid2" id="ovTables"></div>
+    <p class="note"><span class="formula">OVERALL = rank of AVERAGE(category ranks)</span>, lowest first. If two contestants tie, the higher average score across both categories places higher.</p>
+  </section>
+
+  <!-- WINNERS -->
+  <section id="v-winners" hidden>
+    <div class="bar"><span class="lbl">Results</span><button class="btn ghost noprint" style="margin-left:auto" onclick="window.print()">Print</button></div>
+    <div id="winners"></div>
+  </section>
+
+  <!-- SETUP -->
+  <section id="v-setup" hidden>
+    <div class="stack">
+      <div class="card plain">
+        <h2>Event</h2>
+        <div class="form">
+          <label>Event title<input id="setTitle" maxlength="80"></label>
+          <label>Subtitle<input id="setSub" maxlength="120"></label>
+          <label>Female contestants<input id="setNF" type="number" min="1" max="30" inputmode="numeric"></label>
+          <label>Male contestants<input id="setNM" type="number" min="1" max="30" inputmode="numeric"></label>
+        </div>
+      </div>
+      <div class="card plain">
+        <h2>Judges and their scoring links<em>Send each judge their own link</em></h2>
+        <div id="setJudges"></div>
+        <div class="actions" style="padding-top:12px"><button class="btn ghost" id="addJudge">Add judge</button><button class="btn danger" id="rmJudge">Remove last judge</button></div>
+        <div id="rmConfirm"></div>
+      </div>
+      <div class="grid2">
+        <div class="card F"><h2>Female contestants</h2><div class="form" id="setNamesF"></div></div>
+        <div class="card M"><h2>Male contestants</h2><div class="form" id="setNamesM"></div></div>
+      </div>
+      <div class="card plain">
+        <h2>Data</h2>
+        <div class="actions" style="padding-top:16px">
+          <button class="btn" id="expCsv">Export results (CSV)</button>
+          <button class="btn ghost" id="expJson">Download score backup (JSON)</button>
+          <button class="btn danger" id="clearAll">Clear all scores</button>
+          <button class="btn ghost" id="leave">Close this event on this device</button>
+        </div>
+        <div id="clearConfirm"></div>
+      </div>
+    </div>
+  </section>
+</div></main>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="firebase-config.js?v=2"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="core.js?v=2"></script>
+<script src="admin.js?v=2"></script>
+</body>
+</html>
