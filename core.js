@@ -1,12 +1,13 @@
 /* Shared by the admin and judge pages: criteria, formulas, and live sync with Firebase. */
 'use strict';
 
-/* ---------- Criteria for Judging (CDAP, LPU-Batangas) ---------- */
-const CRITERIA = [
-  {name:'Presentation', hint:'Poise, Bearing and Confidence', max:40},
-  {name:'Appropriateness of the Outfit', hint:'', max:30},
-  {name:'Attention to Details', hint:'Make-up, shoes, accessories', max:30}
+/* ---------- Default Criteria for Judging (CDAP, LPU-Batangas); the admin can edit them per event ---------- */
+const DEFAULT_CRITERIA = () => [
+  {id:'c1', name:'Presentation', hint:'Poise, Bearing and Confidence', max:40},
+  {id:'c2', name:'Appropriateness of the Outfit', hint:'', max:30},
+  {id:'c3', name:'Attention to Details', hint:'Make-up, shoes, accessories', max:30}
 ];
+const LEGACY_IDS = ['c1','c2','c3'];   // early score rows were stored as arrays in this order
 const CATS = [
   {id:'uniform',   name:'School Uniform',   award:'Best in School Uniform'},
   {id:'corporate', name:'Corporate Attire', award:'Best in Corporate Attire'}
@@ -15,7 +16,7 @@ const PLACES = ['Power Dressing Icon 2026', 'Power Dressing Icon 1st Runner-up',
 const G = {F:'Female', M:'Male'};
 const DEFAULT_CFG = () => ({title:'Power Dressing Icon 2026', sub:'Career Development, Alumni and Placement',
   judges:[{id:'j1',name:'Judge 1'},{id:'j2',name:'Judge 2'},{id:'j3',name:'Judge 3'}],
-  n:{F:7,M:7}, names:{F:[],M:[]}});
+  n:{F:7,M:7}, names:{F:[],M:[]}, criteria:DEFAULT_CRITERIA()});
 
 const T = {
   CFG: DEFAULT_CFG(),
@@ -45,14 +46,22 @@ function pills(el, items, cur, onPick, cls=''){
 const nameCell = (g, i) => { const nm = T.CFG.names[g]?.[i]; return `<td class="name">#${i + 1}${nm ? `<span>${esc(nm)}</span>` : ''}</td>`; };
 const candLabel = (g, i) => { const nm = T.CFG.names[g]?.[i]; return `Contestant #${i + 1}${nm ? ' · ' + esc(nm) : ''}`; };
 const rankBadge = r => r == null ? '<span class="muted">—</span>' : `<span class="rank ${r <= 3 ? 'r' + r : ''}">${r}</span>`;
-const critHead = () => CRITERIA.map(c => `<th>${esc(c.name)}${c.hint ? `<span class="hint">${esc(c.hint)}</span>` : ''}<small>${c.max}%</small></th>`).join('');
+const crit = () => T.CFG.criteria;
+const maxTotal = () => crit().reduce((a, c) => a + (+c.max || 0), 0);
+const critHead = () => crit().map(c => `<th>${esc(c.name || 'Untitled criterion')}${c.hint ? `<span class="hint">${esc(c.hint)}</span>` : ''}<small>${c.max} pts</small></th>`).join('');
 
 /* ---------- Formulas ---------- */
-function row(jid, c, g, i){ return T.SCORES[`${jid}-${c}`]?.[g]?.[i] || []; }
+// One judge's scores for one contestant, as {criterionId: score}
+function row(jid, c, g, i){
+  const r = T.SCORES[`${jid}-${c}`]?.[g]?.[i];
+  if(!r) return {};
+  if(Array.isArray(r)){ const o = {}; r.forEach((v, k) => { if(LEGACY_IDS[k]) o[LEGACY_IDS[k]] = v; }); return o; }
+  return r;
+}
 // TOTAL = SUM(criteria); blank until every criterion has a score
 function judgeTotal(jid, c, g, i){
-  const r = row(jid, c, g, i); let s = 0;
-  for(let k = 0; k < CRITERIA.length; k++){ const v = r[k]; if(v == null || v === '' || isNaN(v)) return null; s += +v; }
+  const r = row(jid, c, g, i), C = crit(); if(!C.length) return null; let s = 0;
+  for(const cr of C){ const v = r[cr.id]; if(v == null || v === '' || isNaN(v)) return null; s += +v; }
   return s;
 }
 // AVERAGE = AVERAGE(all judges' totals); blank until every judge is done
@@ -93,7 +102,11 @@ async function connect(){
   await firebase.auth().signInAnonymously();
   T.fs = firebase.firestore();
 }
-function applyEvent(d){ T.CFG = {...DEFAULT_CFG(), ...(d.config || {})}; T.CFG.names ??= {F:[], M:[]}; T.pinHash = d.pinHash || null; }
+function applyEvent(d){
+  T.CFG = {...DEFAULT_CFG(), ...(d.config || {})}; T.CFG.names ??= {F:[], M:[]};
+  if(!Array.isArray(T.CFG.criteria)) T.CFG.criteria = DEFAULT_CRITERIA();
+  T.pinHash = d.pinHash || null;
+}
 async function openEvent(code){
   closeEvent();
   const ref = T.fs.collection('events').doc(code);

@@ -115,6 +115,16 @@ h3.sec:first-child{margin-top:4px}
 .linkrow input{padding:8px 10px;border:1px solid var(--line);border-radius:8px;font:400 15px var(--font-ui);color:var(--ink);background:var(--card);min-width:0}
 .linkrow code{font:500 12px ui-monospace,Menlo,monospace;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 @media (max-width:640px){.linkrow{grid-template-columns:minmax(0,1fr) auto}.linkrow code{grid-column:1/-1;order:3}}
+.critrow{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,2fr) 96px auto;gap:8px;align-items:end;padding:8px 16px;border-bottom:1px solid var(--line)}
+.critrow:last-child{border-bottom:0}
+.critrow label{display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;min-width:0}
+.critrow input{padding:8px 10px;border:1px solid var(--line);border-radius:8px;font:400 15px var(--font-ui);color:var(--ink);background:var(--card);min-width:0;text-transform:none;letter-spacing:0}
+.critrow input.bad{border-color:var(--bad);background:var(--bad-soft)}
+@media (max-width:640px){
+  .critrow{grid-template-columns:minmax(0,1fr) 90px}
+  .critrow label:nth-child(2){grid-column:1/-1;order:3}
+  .critrow button{grid-column:1/-1;order:4;justify-self:end}
+}
 .center{max-width:880px;margin:24px auto 0}
 .who{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;padding:16px}
 .who button{padding:16px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);font:700 16px var(--font-ui);cursor:pointer;text-align:left}

@@ -9,7 +9,7 @@ Live site: https://nininiw.github.io/tabulation/ (judges) and https://nininiw.gi
 
 ## Criteria for Judging
 
-Used for both rounds, **School Uniform** and **Corporate Attire**, in the Male and Female categories:
+The admin can add, rename, re-weight or remove criteria for each event in **Event Setup → Criteria for judging**. Judges' scoresheets update live. **Restore CDAP criteria** brings back the defaults below, which are used for both rounds, **School Uniform** and **Corporate Attire**, in the Male and Female categories:
 
 | Criterion | Weight (max points) |
 |---|---|

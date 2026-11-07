@@ -36,10 +36,10 @@ function renderSheets(){
   const c = catOf(ui.sheetCat), jn = J.find(j => j.id === ui.sheetJudge).name;
   $('sheetTables').innerHTML = ['F','M'].map(g => {
     const body = Array.from({length:T.CFG.n[g]}, (_, i) => { const r = row(ui.sheetJudge, c.id, g, i);
-      return `<tr>${nameCell(g, i)}${CRITERIA.map((_, k) => `<td class="num">${r[k] ?? '<span class="muted">—</span>'}</td>`).join('')}
+      return `<tr>${nameCell(g, i)}${crit().map(cr => `<td class="num">${r[cr.id] ?? '<span class="muted">—</span>'}</td>`).join('')}
         <td class="tot">${judgeTotal(ui.sheetJudge, c.id, g, i) ?? '—'}</td></tr>`; }).join('');
     return `<div class="card ${g}"><h2>${G[g]} · ${esc(c.name)}<em>${esc(jn)}</em></h2><div class="scroll"><table>
-      <thead><tr><th>No.</th>${critHead()}<th>Total<small>/100</small></th></tr></thead><tbody>${body}</tbody></table></div></div>`;
+      <thead><tr><th>No.</th>${critHead()}<th>Total<small>/${maxTotal()}</small></th></tr></thead><tbody>${body}</tbody></table></div></div>`;
   }).join('');
 }
 
@@ -92,6 +92,7 @@ function renderSetup(){
   const setVal = (el, v) => { if(document.activeElement !== el) el.value = v; };
   setVal($('setTitle'), T.CFG.title); setVal($('setSub'), T.CFG.sub); setVal($('setNF'), T.CFG.n.F); setVal($('setNM'), T.CFG.n.M);
   $('rmJudge').disabled = T.CFG.judges.length <= 1;
+  renderCriteria();
   if(!$('setJudges').contains(document.activeElement)){
     $('setJudges').innerHTML = T.CFG.judges.map((j, i) => `<div class="linkrow">
       <input id="jn-${esc(j.id)}" data-i="${i}" maxlength="40" value="${esc(j.name)}" aria-label="Judge ${i + 1} name">
@@ -107,6 +108,44 @@ function renderSetup(){
   });
   renderConfirms();
 }
+/* ---------- Criteria editor ---------- */
+const anyScores = () => Object.values(T.SCORES).some(d => ['F','M'].some(g => Object.keys(d?.[g] || {}).length));
+function critStatus(){
+  const sum = maxTotal();
+  $('critSum').textContent = `Total ${sum} points`;
+  const msgs = [];
+  if(sum !== 100) msgs.push(`The criteria add up to ${sum} points, not 100. Totals will be out of ${sum}.`);
+  if(anyScores()) msgs.push('Judges have already entered scores. Changing points or removing a criterion changes their totals, and a newly added criterion must be scored by every judge before contestants are ranked again.');
+  $('critWarn').textContent = msgs.join(' '); $('critWarn').hidden = !msgs.length;
+}
+function renderCriteria(){
+  critStatus();
+  if($('setCriteria').contains(document.activeElement)) return;
+  const C = crit();
+  $('setCriteria').innerHTML = C.map((c, i) => `<div class="critrow">
+    <label>Criterion ${i + 1}<input id="crn-${esc(c.id)}" data-i="${i}" data-f="name" maxlength="60" value="${esc(c.name)}" placeholder="e.g. Presentation"></label>
+    <label>Description<input id="crh-${esc(c.id)}" data-i="${i}" data-f="hint" maxlength="80" value="${esc(c.hint)}" placeholder="Optional, e.g. Poise, Bearing and Confidence"></label>
+    <label>Max points<input id="crm-${esc(c.id)}" data-i="${i}" data-f="max" type="number" min="1" max="100" inputmode="numeric" value="${esc(c.max)}"></label>
+    <button class="btn danger sm" data-rm="${esc(c.id)}" ${C.length <= 1 ? 'disabled' : ''}>Remove</button></div>`).join('')
+    || '<div class="empty"><b>No criteria</b>Add at least one criterion.</div>';
+  $('setCriteria').querySelectorAll('input').forEach(inp => inp.oninput = () => {
+    const c = T.CFG.criteria[+inp.dataset.i], f = inp.dataset.f;
+    if(f === 'max'){
+      const v = parseInt(inp.value, 10), ok = v >= 1 && v <= 100;
+      inp.classList.toggle('bad', !ok); if(!ok) return;
+      c.max = v;
+    }else c[f] = inp.value;
+    critStatus(); queueCfg();
+  });
+  $('setCriteria').querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { ui.confirm = 'crit:' + b.dataset.rm; renderConfirms(); });
+}
+$('addCrit').onclick = () => {
+  T.CFG.criteria.push({id:'c' + Date.now().toString(36), name:'', hint:'', max:10});
+  queueCfg(); renderCriteria();
+  $('setCriteria').querySelector('.critrow:last-child input')?.focus();
+};
+$('resetCrit').onclick = () => { ui.confirm = 'critReset'; renderConfirms(); };
+
 async function copy(text, el){
   try{ await navigator.clipboard.writeText(text); toast('Link copied'); }
   catch(e){ const r = document.createRange(); r.selectNodeContents(el); getSelection().removeAllRanges(); getSelection().addRange(r); toast('Press Ctrl/Cmd+C to copy'); }
@@ -116,6 +155,16 @@ function renderConfirms(){
     <button class="btn solid-danger" id="rmYes">Remove judge</button><button class="btn ghost" id="cNo1">Cancel</button></div>` : '';
   $('clearConfirm').innerHTML = ui.confirm === 'clear' ? `<div class="confirm">Erase every judge's scores for this event? This cannot be undone.
     <button class="btn solid-danger" id="clearYes">Erase all scores</button><button class="btn ghost" id="cNo2">Cancel</button></div>` : '';
+  const cc = ui.confirm?.startsWith('crit:') ? T.CFG.criteria.find(c => 'crit:' + c.id === ui.confirm) : null;
+  $('critConfirm').innerHTML = cc ? `<div class="confirm">Remove the criterion “${esc(cc.name || 'Untitled')}”? Totals will no longer include it.
+    <button class="btn solid-danger" id="critYes">Remove criterion</button><button class="btn ghost" id="cNo3">Cancel</button></div>`
+    : ui.confirm === 'critReset' ? `<div class="confirm">Replace the current criteria with the CDAP criteria (Presentation 40, Appropriateness of the Outfit 30, Attention to Details 30)?
+    <button class="btn solid-danger" id="critYes">Restore criteria</button><button class="btn ghost" id="cNo3">Cancel</button></div>` : '';
+  if($('critYes')) $('critYes').onclick = () => {
+    if(cc) T.CFG.criteria = T.CFG.criteria.filter(c => c !== cc); else T.CFG.criteria = DEFAULT_CRITERIA();
+    ui.confirm = null; queueCfg(); renderSetup(); toast(cc ? 'Criterion removed' : 'CDAP criteria restored');
+  };
+  if($('cNo3')) $('cNo3').onclick = () => { ui.confirm = null; renderConfirms(); };
   if($('rmYes')) $('rmYes').onclick = removeJudge;
   if($('clearYes')) $('clearYes').onclick = clearScores;
   ['cNo1','cNo2'].forEach(id => { if($(id)) $(id).onclick = () => { ui.confirm = null; renderConfirms(); }; });
@@ -147,8 +196,8 @@ function buildCsv(){
   const q = v => `"${String(v ?? '').replace(/"/g, '""')}"`, C = T.CFG, L = [q(C.title)];
   CATS.forEach(c => ['F','M'].forEach(g => {
     L.push('', q(`${G[g].toUpperCase()} · ${c.name.toUpperCase()} · SCORESHEETS`));
-    L.push(['Judge','No.','Name', ...CRITERIA.map(cr => `${cr.name} (${cr.max}%)`), 'Total'].map(q).join(','));
-    C.judges.forEach(j => { for(let i = 0; i < C.n[g]; i++){ const r = row(j.id, c.id, g, i); L.push([j.name, i + 1, C.names[g]?.[i] || '', ...CRITERIA.map((_, k) => r[k]), judgeTotal(j.id, c.id, g, i)].map(q).join(',')); } });
+    L.push(['Judge','No.','Name', ...crit().map(cr => `${cr.name} (${cr.max} pts)`), 'Total'].map(q).join(','));
+    C.judges.forEach(j => { for(let i = 0; i < C.n[g]; i++){ const r = row(j.id, c.id, g, i); L.push([j.name, i + 1, C.names[g]?.[i] || '', ...crit().map(cr => r[cr.id]), judgeTotal(j.id, c.id, g, i)].map(q).join(',')); } });
     const res = catResults(c.id, g);
     L.push('', q(`${G[g].toUpperCase()} · ${c.name.toUpperCase()} · RESULTS`));
     L.push(['No.','Name', ...C.judges.map(j => j.name), 'Average', 'Rank'].map(q).join(','));

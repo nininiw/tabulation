@@ -35,13 +35,15 @@ function renderScore(){
   $('scoreTables').innerHTML = ['F','M'].map(g => {
     const body = Array.from({length:T.CFG.n[g]}, (_, i) => {
       const r = row(ui.judge, c.id, g, i), t = judgeTotal(ui.judge, c.id, g, i);
-      return `<tr>${nameCell(g, i)}${CRITERIA.map((cr, k) => `<td><input class="sc" id="in-${g}-${i}-${k}" type="number" inputmode="decimal" min="0" max="${cr.max}" step="0.5"
-        data-g="${g}" data-i="${i}" data-k="${k}" value="${r[k] ?? ''}" aria-label="${G[g]} #${i + 1} ${esc(cr.name)}, out of ${cr.max}"></td>`).join('')}
+      return `<tr>${nameCell(g, i)}${crit().map(cr => { const v = r[cr.id];
+        return `<td><input class="sc ${v != null && v > cr.max ? 'bad' : ''}" id="in-${g}-${i}-${esc(cr.id)}" type="number" inputmode="decimal" min="0" max="${cr.max}" step="0.5"
+        data-g="${g}" data-i="${i}" data-k="${esc(cr.id)}" value="${v ?? ''}" aria-label="${G[g]} #${i + 1} ${esc(cr.name)}, out of ${cr.max}"></td>`; }).join('')}
         <td class="tot" id="t-${g}-${i}">${t ?? '—'}</td></tr>`;
     }).join('');
     return `<div class="card ${g}"><h2>${G[g]} · ${esc(c.name)}<em>${esc(me.name)}</em></h2><div class="scroll"><table>
-      <thead><tr><th>No.</th>${critHead()}<th>Total<small>/100</small></th></tr></thead><tbody>${body}</tbody></table></div></div>`;
+      <thead><tr><th>No.</th>${critHead()}<th>Total<small>/${maxTotal()}</small></th></tr></thead><tbody>${body}</tbody></table></div></div>`;
   }).join('');
+  $('critNote').textContent = 'Score each criterion up to its maximum: ' + crit().map(cr => `${cr.name || 'Untitled'} up to ${cr.max}`).join(', ') + '. Scores save automatically as you type.';
   progress();
   // keep out-of-range entries visible (and red) across redraws so the judge can correct them
   for(const [id, v] of Object.entries(badVals)){ const el = $(id); if(el){ el.value = v; el.classList.add('bad'); } }
@@ -53,33 +55,39 @@ function renderScore(){
 function progress(){ const [d, t] = countDone(ui.judge, ui.cat); $('scoreProgress').textContent = `${d} of ${t} contestants scored`; }
 
 function onInput(inp, c){
-  const g = inp.dataset.g, i = +inp.dataset.i, k = +inp.dataset.k, max = CRITERIA[k].max;
+  const g = inp.dataset.g, i = +inp.dataset.i, cid = inp.dataset.k, cr = crit().find(x => x.id === cid);
+  if(!cr) return;
   const v = inp.value === '' ? null : parseFloat(inp.value);
-  const bad = v != null && (isNaN(v) || v < 0 || v > max);
-  inp.classList.toggle('bad', bad); inp.title = bad ? `Enter a score from 0 to ${max}` : '';
+  const bad = v != null && (isNaN(v) || v < 0 || v > cr.max);
+  inp.classList.toggle('bad', bad); inp.title = bad ? `Enter a score from 0 to ${cr.max}` : '';
   if(bad){ badVals[inp.id] = inp.value; return; }
   delete badVals[inp.id];
   const key = `${ui.judge}-${c.id}`;
   T.SCORES[key] ??= {F:{}, M:{}}; T.SCORES[key][g] ??= {};
-  const r = [...(T.SCORES[key][g][i] || [])]; while(r.length < CRITERIA.length) r.push(null); r[k] = v;
-  T.SCORES[key][g][i] = r;
+  T.SCORES[key][g][i] = {...row(ui.judge, c.id, g, i), [cid]: v};
   $(`t-${g}-${i}`).textContent = judgeTotal(ui.judge, c.id, g, i) ?? '—';
   progress(); queueScore(key);
 }
 
-// Live updates (e.g. the organizer renamed contestants) without disturbing the box being typed in
+// Live updates without disturbing the box being typed in.
+// If the admin changed the criteria, redraw the sheet and put the cursor back.
+let critSig = '';
 T.onChange = () => {
-  const a = document.activeElement;
-  if(!$('v-score').hidden && a && a.classList.contains('sc')){
+  const a = document.activeElement, sig = JSON.stringify(crit());
+  const critChanged = critSig !== '' && sig !== critSig; critSig = sig;
+  if(!$('v-score').hidden && a && a.classList.contains('sc') && !critChanged){
     header();
     document.querySelectorAll('input.sc').forEach(inp => {
       if(inp === a || inp.classList.contains('bad')) return;
-      const v = row(ui.judge, ui.cat, inp.dataset.g, +inp.dataset.i)[+inp.dataset.k] ?? '';
+      const v = row(ui.judge, ui.cat, inp.dataset.g, +inp.dataset.i)[inp.dataset.k] ?? '';
       if(inp.value !== String(v)) inp.value = v;
     });
     return;
   }
+  const focusId = a?.classList.contains('sc') ? a.id : null;
   render();
+  if(focusId) $(focusId)?.focus();
+  if(critChanged && !$('v-score').hidden) toast('The organizer updated the criteria');
 };
 
 $('switchJudge').onclick = e => { e.preventDefault(); ui.judge = null; ls.del('judge-id-' + T.eventCode); setHash(); render(); };
