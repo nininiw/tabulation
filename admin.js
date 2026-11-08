@@ -4,7 +4,21 @@
 const ui = {view:ls.get('admin-view', 'sheets'), sheetJudge:null, sheetCat:'uniform', resCat:'uniform', confirm:null};
 const VIEWS = ['start','sheets','results','winners','setup'];
 
-function judgeLink(jid){ return new URL('index.html', location.href).href.split('#')[0] + '#' + T.eventCode + '/' + jid; }
+let seed = null;          // made from the admin PIN on this device; needed to build judges' personal links
+const links = {};         // judgeId -> personal link
+const judgeLink = jid => links[jid] || '';
+// Give every judge a personal link key; only its hash is stored with the event.
+async function syncKeys(){
+  if(!seed || !T.eventCode) return;
+  const base = new URL('index.html', location.href).href.split('#')[0];
+  let changed = false;
+  for(const j of T.CFG.judges){
+    const key = await judgeKey(seed, j.id), h = await sha(key);
+    links[j.id] = `${base}#${T.eventCode}/${j.id}.${key}`;
+    if(j.keyHash !== h){ j.keyHash = h; changed = true; }
+  }
+  if(changed) queueCfg();
+}
 function header(){
   $('evTitle').textContent = T.eventCode ? (T.CFG.title || 'Power Dressing Icon 2026') : 'Power Dressing Icon 2026';
   $('evSub').textContent = T.eventCode ? (T.CFG.sub || '') : 'Create an event or open one you already made';
@@ -96,7 +110,7 @@ function renderSetup(){
   if(!$('setJudges').contains(document.activeElement)){
     $('setJudges').innerHTML = T.CFG.judges.map((j, i) => `<div class="linkrow">
       <input id="jn-${esc(j.id)}" data-i="${i}" maxlength="40" value="${esc(j.name)}" aria-label="Judge ${i + 1} name">
-      <code>${esc(judgeLink(j.id))}</code>
+      <code>${esc(judgeLink(j.id) || 'Preparing link…')}</code>
       <button class="btn plum sm" data-copy="${esc(j.id)}">Copy link</button></div>`).join('');
     $('setJudges').querySelectorAll('input').forEach(inp => inp.oninput = () => { T.CFG.judges[+inp.dataset.i].name = inp.value; header(); queueCfg(); });
     $('setJudges').querySelectorAll('[data-copy]').forEach(b => b.onclick = () => copy(judgeLink(b.dataset.copy), b.previousElementSibling));
@@ -172,7 +186,7 @@ function renderConfirms(){
 $('setTitle').oninput = e => { T.CFG.title = e.target.value; header(); queueCfg(); };
 $('setSub').oninput = e => { T.CFG.sub = e.target.value; header(); queueCfg(); };
 ['F','M'].forEach(g => $('setN' + g).onchange = e => { T.CFG.n[g] = Math.max(1, Math.min(30, parseInt(e.target.value) || 1)); e.target.value = T.CFG.n[g]; queueCfg(); renderSetup(); });
-$('addJudge').onclick = () => { T.CFG.judges.push({id:'j' + Date.now().toString(36), name:`Judge ${T.CFG.judges.length + 1}`}); queueCfg(); renderSetup(); };
+$('addJudge').onclick = async () => { T.CFG.judges.push({id:'j' + Date.now().toString(36), name:`Judge ${T.CFG.judges.length + 1}`}); await syncKeys(); queueCfg(); renderSetup(); };
 $('rmJudge').onclick = () => { ui.confirm = 'rm'; renderConfirms(); };
 $('clearAll').onclick = () => { ui.confirm = 'clear'; renderConfirms(); };
 async function removeJudge(){
@@ -185,7 +199,7 @@ async function clearScores(){
   for(const k of keys){ try{ await T.eventRef.collection('scores').doc(k).delete(); }catch(e){} }
   render(); toast('All scores erased');
 }
-$('leave').onclick = () => { ls.del('admin-event'); closeEvent(); history.replaceState(null, '', location.pathname); render(); };
+$('leave').onclick = () => { ls.del('admin-event'); ls.del('admin-seed-' + T.eventCode); seed = null; closeEvent(); history.replaceState(null, '', location.pathname); render(); };
 
 /* ---------- Exports ---------- */
 function download(name, text, type){
@@ -214,8 +228,9 @@ $('expCsv').onclick = () => download(`${(T.CFG.title || 'tabulation').replace(/[
 $('expJson').onclick = () => download('tabulation-backup.json', JSON.stringify({code:T.eventCode, config:T.CFG, scores:T.SCORES}, null, 2), 'application/json');
 
 /* ---------- Create / open ---------- */
-async function enter(code){
-  ls.set('admin-event', code); ls.set('admin-ok-' + code, true);
+async function enter(code, s){
+  seed = s; ls.set('admin-event', code); ls.set('admin-seed-' + code, s); ls.del('admin-ok-' + code);
+  await syncKeys();
   if(location.hash.slice(1) !== code) history.replaceState(null, '', '#' + code);
   render();
 }
@@ -226,7 +241,7 @@ $('newForm').onsubmit = async e => {
   const code = newCode();
   try{
     await T.fs.collection('events').doc(code).set({config:{...DEFAULT_CFG(), title: title || 'Power Dressing Icon 2026'}, pinHash: await hashPin(code, pin), created: Date.now()});
-    await openEvent(code); ui.view = 'setup'; await enter(code);
+    await openEvent(code); ui.view = 'setup'; await enter(code, await linkSeed(code, pin));
     toast('Event created. Copy each judge their link.');
   }catch(err){ console.error(err); showErr('newErr', 'Could not create the event. Check your internet connection and the Firebase setup.'); }
 };
@@ -237,12 +252,13 @@ $('openForm').onsubmit = async e => {
   try{
     if(!(await openEvent(code))){ showErr('openErr', 'No event uses that code.'); return; }
     if(await hashPin(code, pin) !== T.pinHash){ closeEvent(); showErr('openErr', 'That PIN is not correct for this event.'); return; }
-    $('openPin').value = ''; await enter(code);
+    $('openPin').value = ''; await enter(code, await linkSeed(code, pin));
   }catch(err){ console.error(err); showErr('openErr', 'Could not reach the server. Check your internet connection.'); }
 };
 
 // Live updates: redraw, but leave a setup field alone while it's being typed in
-T.onChange = () => {
+T.onChange = async () => {
+  await syncKeys();
   const a = document.activeElement;
   if(ui.view === 'setup' && a && a.tagName === 'INPUT' && $('v-setup').contains(a)){ header(); return; }
   render();
@@ -257,8 +273,9 @@ T.onChange = () => {
     return;
   }
   const code = cleanCode(location.hash.slice(1)) || ls.get('admin-event');
-  if(code && ls.get('admin-ok-' + code) === true){
-    try{ if(await openEvent(code)){ await enter(code); return; } }catch(err){ console.error(err); }
+  const savedSeed = code && ls.get('admin-seed-' + code);
+  if(savedSeed){
+    try{ if(await openEvent(code)){ await enter(code, savedSeed); return; } }catch(err){ console.error(err); }
     ls.del('admin-event');
   }else if(code){ $('openCode').value = code; }
   render();

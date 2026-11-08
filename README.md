@@ -3,7 +3,7 @@
 A browser-based tabulation system with two pages:
 
 - **Admin** (`admin.html`): create the event, set judges and contestants, watch every judge's scores live, see the computation, and get the winners.
-- **Judge** (`index.html`): each judge gets their own link and sees only their own scoresheet. No results or rankings are shown to judges.
+- **Judge** (`index.html`): each judge gets a personal link and sees only their own scoresheet. There is no way to switch to another judge, and no results or rankings are shown. Scores save automatically, and a **Save scores** button confirms the save with the time.
 
 Live site: https://nininiw.github.io/tabulation/ (judges) and https://nininiw.github.io/tabulation/admin.html (admin)
 
@@ -44,7 +44,7 @@ The admin can add, rename, re-weight or remove criteria for each event in **Even
 1. **Admin:** open `admin.html`, choose **Create a new event**, enter the title and an admin PIN.
 2. In **Event Setup**, type the judges' names and the number and names of the contestants.
 3. Click **Copy link** beside each judge and send that judge their own link.
-4. **Judges:** open their link, choose **School Uniform** or **Corporate Attire**, and type scores. Scores save automatically.
+4. **Judges:** open their link, choose **School Uniform** or **Corporate Attire**, and type scores. Scores save automatically; tapping **Save scores** confirms everything is saved.
 5. **Admin:** watch **Judges' Scores** (progress and each judge's sheet), **Computation**, and **Winners** update live. Use **Print** or **Export results (CSV)** at the end.
 
 To open the admin page on another device, choose **Open an existing event** and enter the event code and PIN.
@@ -61,6 +61,7 @@ When you change `core.js`, `judge.js`, `admin.js` or `style.css`, raise the `?v=
 
 ## Security notes
 
-- Anyone with a judge link can enter scores for that event, so send each link only to that judge.
+- Each judge link carries a secret key made from the admin PIN, so changing the link to another judge doesn't work. Send each link only to that judge.
+- Links from before this update (without a key) no longer work. Copy fresh links from **Event Setup**.
 - The judge page doesn't show other judges' scores or results, but the event data isn't locked per judge. Someone technical with the event code could still read it.
 - The admin PIN protects the admin page from casual access. It is not a hard security barrier.

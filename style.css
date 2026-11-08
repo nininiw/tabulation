@@ -129,6 +129,14 @@ h3.sec:first-child{margin-top:4px}
 .who{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;padding:16px}
 .who button{padding:16px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);font:700 16px var(--font-ui);cursor:pointer;text-align:left}
 .who button:hover{border-color:var(--plum);color:var(--plum-ink)}
+.savebar{position:fixed;left:0;right:0;bottom:0;z-index:15;background:var(--card);border-top:1px solid var(--line);box-shadow:0 -4px 16px rgba(0,0,0,.06);padding-bottom:env(safe-area-inset-bottom,0px)}
+.savebar .wrap{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:10px}
+.savestate{font-size:13px;color:var(--muted)}
+.savestate.ok{color:var(--good);font-weight:700}
+.savestate.warn{color:var(--bad);font-weight:700}
+.savebar .btn{padding:11px 22px;font-size:15px}
+body.has-savebar main .wrap{padding-bottom:110px}
+body.has-savebar .toast{bottom:calc(80px + env(safe-area-inset-bottom,0px))}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:999px;font-weight:600;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:20}
 .toast.show{opacity:1}
 @media (prefers-reduced-motion:reduce){.toast{transition:none}}

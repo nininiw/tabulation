@@ -7,7 +7,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%234f2b48'/%3E%3Cpath d='M9 10h14v3a7 7 0 0 1-14 0zM16 20v4M12 25h8' stroke='white' stroke-width='2.2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap">
-<link rel="stylesheet" href="style.css?v=4">
+<link rel="stylesheet" href="style.css?v=6">
 </head>
 <body>
 <header class="solo">
@@ -26,22 +26,12 @@
 <main><div class="wrap">
   <div class="banner" id="banner" hidden></div>
 
-  <!-- Enter event code -->
-  <section id="v-code" hidden>
+  <!-- No valid personal link -->
+  <section id="v-link" hidden>
     <div class="center card F">
-      <h2>Join as a judge</h2>
-      <p class="lead">Enter the event code from the organizer, or open the judge link they sent you.</p>
-      <form class="form" id="codeForm"><label>Event code<input id="codeInput" autocomplete="off" autocapitalize="characters" placeholder="e.g. K7Q2M9XD" required></label></form>
-      <div class="err" id="codeErr" hidden></div>
-      <div class="actions"><button class="btn plum" form="codeForm">Continue</button></div>
-    </div>
-  </section>
-
-  <!-- Pick judge -->
-  <section id="v-who" hidden>
-    <div class="center card plain">
-      <h2>Which judge are you?</h2>
-      <div class="who" id="whoList"></div>
+      <h2>Personal scoring link needed</h2>
+      <p class="lead" id="linkMsg">Open the personal scoring link the organizer sent you. Each judge has their own link.</p>
+      <div class="actions" style="padding-top:14px"></div>
     </div>
   </section>
 
@@ -50,16 +40,21 @@
     <div class="bar"><span class="lbl">Category</span><div class="pills" id="catPills"></div><span class="progress" id="scoreProgress"></span></div>
     <div class="grid2" id="scoreTables"></div>
     <p class="note" id="critNote"></p>
-    <p class="note"><a href="#" id="switchJudge">Not <span id="meName"></span>? Choose a different judge</a></p>
   </section>
 </div></main>
+<div class="savebar" id="saveBar" hidden>
+  <div class="wrap">
+    <span class="savestate" id="saveState">Scores save automatically as you type.</span>
+    <button class="btn plum" id="saveBtn">Save scores</button>
+  </div>
+</div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="firebase-config.js?v=4"></script>
+<script src="firebase-config.js?v=6"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="core.js?v=4"></script>
-<script src="judge.js?v=4"></script>
+<script src="core.js?v=6"></script>
+<script src="judge.js?v=6"></script>
 </body>
 </html>

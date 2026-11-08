@@ -158,5 +158,24 @@ async function flushCfg(){
   catch(e){ console.error(e); cfgDirty = true; setSync('warn', 'Setup not saved, retrying'); cfgTimer = setTimeout(flushCfg, 3000); }
   finally{ cfgWriting = false; }
 }
+// Save button: write these score documents right now and wait until the server confirms.
+async function saveNow(keys){
+  keys.forEach(k => clearTimeout(timers[k]));
+  for(let n = 0; writing.size && n < 100; n++) await new Promise(r => setTimeout(r, 100));
+  setSync('warn', 'Saving…');
+  const write = k => { dirty.delete(k); writing.add(k);
+    return T.eventRef.collection('scores').doc(k).set(JSON.parse(JSON.stringify(T.SCORES[k] || {F:{}, M:{}}))).finally(() => writing.delete(k)); };
+  const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 12000));
+  try{ await Promise.race([Promise.all(keys.map(write)), timeout]); setSync('live', 'Live · all changes saved'); }
+  catch(e){ keys.forEach(k => queueScore(k)); throw e; }
+}
+
+/* ---------- Personal judge links ----------
+   Each link carries a key made from the admin PIN, so judges can't open another judge's sheet by editing the link.
+   Only a hash of each key is stored with the event. */
+const sha = async s => Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s))), b => b.toString(16).padStart(2, '0')).join('');
+const linkSeed = (code, pin) => sha('links:' + code + ':' + pin);
+const judgeKey = async (seed, jid) => (await sha(seed + ':' + jid)).slice(0, 16);
+
 function hasUnsaved(){ return dirty.size > 0 || writing.size > 0 || cfgDirty || cfgWriting; }
 window.addEventListener('beforeunload', e => { if(hasUnsaved()){ e.preventDefault(); e.returnValue = ''; } });
